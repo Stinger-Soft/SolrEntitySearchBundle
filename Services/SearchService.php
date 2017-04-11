@@ -107,6 +107,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$doc->id = $this->createIdFromDocument($document);
 		$doc->internalId = json_encode($document->getEntityId());
 		$doc->clazz = $document->getEntityClass();
+		$doc->entityType = $document->getEntityType();
 		
 		foreach($document->getFields() as $key => $value) {
 			$doc->setField($key, $value);
@@ -260,10 +261,10 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	}
 
 	protected function escapeFacetKey($facetKey) {
-		return $facetKey == Document::FIELD_TYPE ? 'clazz' : $facetKey;
+		return $facetKey == Document::FIELD_TYPE ? 'entityType' : $facetKey;
 	}
 
 	protected function unescapeFacetKey($facetKey) {
-		return $facetKey == 'clazz' ? Document::FIELD_TYPE : $facetKey;
+		return $facetKey == 'entityType' ? Document::FIELD_TYPE : $facetKey;
 	}
 }

@@ -14,14 +14,14 @@ namespace StingerSoft\SolrEntitySearchBundle\Model;
 use StingerSoft\EntitySearchBundle\Model\DocumentAdapter;
 use Solarium\QueryType\Select\Result\DocumentInterface;
 
-class Document extends DocumentAdapter{
-	
-	
+class Document extends DocumentAdapter {
+
 	public static function createFromSolariumResult(DocumentInterface $solrDocument) {
 		$document = new Document();
 		foreach($solrDocument->getFields() as $key => $value) {
 			$document->addField($key, $value);
 		}
+		$document->setEntityType($document->getFieldValue('entityType'));
 		$document->setEntityClass($document->getFieldValue('clazz'));
 		$document->setEntityId($document->getFieldValue('internalId'));
 		return $document;
