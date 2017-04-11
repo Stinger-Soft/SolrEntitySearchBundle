@@ -48,11 +48,11 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 	 * @return \StingerSoft\SolrEntitySearchBundle\Services\SearchService
 	 */
 	protected function getSearchService() {
-		$service = new SearchService(new ClientConfiguration(array(
+		$service = new SearchService(array(
 			'path' => '/solr/platform/',
 			'port' => '8983',
 			'ipaddress' => '127.0.0.1',
-		)));
+		));
 		$service->setObjectManager($this->em);
 		$service->setContainer($this->getMockContainer());
 		if(!$service->ping()) {

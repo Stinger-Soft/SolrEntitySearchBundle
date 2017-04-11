@@ -30,12 +30,12 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	protected $configuration;
 
-	public function __construct(ClientConfiguration $configuration) {
-		$this->configuration = $configuration;
+	public function __construct(array $config) {
+		$this->configuration = new ClientConfiguration($config);
 	}
 
 	public function initializeBackend() {
-		// Add common field
+		// Add common fields (title, author, editors, etc.)
 		// Add field textSuggest
 		// Copyfield title -> textSuggest
 	}
@@ -162,6 +162,8 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		
 		$query->setCount($maxResults);
 		$query->addParam('suggest.count', $maxResults);
+		
+		$query->addParam('suggest.build', 'true');
 		
 		$query->setCollate(true);
 		

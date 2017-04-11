@@ -12,25 +12,39 @@
 namespace StingerSoft\SolrEntitySearchBundle\Model;
 
 use Doctrine\ORM\Query;
-use Doctrine\ORM\QueryBuilder;
+use Solarium\Core\Query\QueryInterface;
 use StingerSoft\EntitySearchBundle\Model\PaginatableResultSet;
 use StingerSoft\EntitySearchBundle\Model\ResultSetAdapter;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
 class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, ContainerAwareInterface {
 	
 	use ContainerAwareTrait;
 
+	/**
+	 *
+	 * @var \Solarium\QueryType\Select\Query\Query
+	 */
 	protected $query = null;
-
-	protected $term = null;
-	
-	protected $client= null;
 
 	/**
 	 *
-	 * @param Query|QueryBuilder $items        	
+	 * @var string
+	 */
+	protected $term = null;
+
+	/**
+	 *
+	 * @var \Solarium\Client
+	 */
+	protected $client = null;
+
+	/**
+	 *
+	 * @param \Solarium\Client $client        	
+	 * @param \Solarium\QueryType\Select\Query\Query $query        	
+	 * @param string $term        	
 	 */
 	public function __construct($client, $query, $term) {
 		$this->query = $query;
@@ -46,7 +60,10 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	 */
 	public function paginate($page = 1, $limit = 10, array $options = array()) {
 		$paginator = $this->container->get('knp_paginator');
-		return $paginator->paginate(array($this->client, $this->query), $page, $limit, $options);
+		return $paginator->paginate(array(
+			$this->client,
+			$this->query 
+		), $page, $limit, $options);
 	}
 
 	/**
@@ -56,6 +73,23 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	 * @see \StingerSoft\EntitySearchBundle\Model\ResultSetAdapter::getResults()
 	 */
 	public function getResults($offset = 0, $limit = null) {
-		return $this->paginate(1);
+		$oldStart = $this->query->getStart();
+		$oldOffset = $this->query->getRows();
+		
+		$this->query->setStart($offset);
+		if($limit) {
+			$this->query->setRows($limit);
+		}
+		$solrResult = $this->client->select($this->query);
+		
+		$this->query->setStart($oldStart);
+		$this->query->setRows($oldOffset);
+		
+		$documents = array();
+		foreach($solrResult->getDocuments() as $solrDocument) {
+			$documents[] = Document::createFromSolariumResult($solrDocument);
+		}
+		
+		return $documents;
 	}
 }

@@ -1,0 +1,15 @@
+parameters:
+  stinger_soft.solr_entity_search.search_service.class: 'StingerSoft\SolrEntitySearchBundle\Services\SearchService'
+  stinger_soft.solr_entity_search.knp_query_subscriber.class: 'StingerSoft\SolrEntitySearchBundle\Services\SolariumQuerySubscriber'
+
+  
+services:
+  stinger_soft.solr_entity_search.search_service:
+    class: '%stinger_soft.solr_entity_search.search_service.class%'
+    calls:
+      - [setContainer, ['@service_container']]
+      
+  stinger_soft.solr_entity_search.knp_query_subscriber:
+    class: '%stinger_soft.solr_entity_search.knp_query_subscriber.class%'
+    tags:
+      - { name: 'knp_paginator.subscriber' }
