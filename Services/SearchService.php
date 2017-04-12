@@ -35,9 +35,46 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	}
 
 	public function initializeBackend() {
-		// Add common fields (title, author, editors, etc.)
-		// Add field textSuggest
-		// Copyfield title -> textSuggest
+		$this->addField('title', 'strings');
+		$this->addField('author', 'string', false);
+		$this->addField('clazz', 'string', false);
+		$this->addField('entityType', 'string', false);
+		$this->addField('internalId', 'string', false);
+		$this->addField('editors', 'strings');
+		$this->addField('textSuggest', 'strings');
+		$this->addCopyField('title', 'textSuggest');
+	}
+
+	public function addField($name, $type, $multivalued = true, $stored = true, $indexed = true) {
+		$client = $this->getClient();
+		$query = new \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query();
+		/**
+		 *
+		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField $command
+		 */
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_FIELD, array(
+			'name' => $name,
+			'type' => $type 
+		));
+		$command->setMultiValued($multivalued);
+		$command->setStored($stored);
+		$command->setIndexed($indexed);
+		$query->add('add_' . $name, $command);
+		$client->execute($query);
+	}
+
+	public function addCopyField($source, $destination) {
+		$client = $this->getClient();
+		$query = new \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query();
+		/**
+		 *
+		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField $command
+		 */
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_COPY_FIELDFIELD);
+		$command->setSource($source);
+		$command->setDestination($destination);
+		$query->add('copy_' . $source . '_' . $destination, $command);
+		$client->execute($query);
 	}
 
 	/**
@@ -108,7 +145,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		if(false) {
 			$filename = $document->getFile();
 			if(!file_exists($filename)) {
-				//$this->logger->error('Can\' find file ' . $filename);
+				// $this->logger->error('Can\' find file ' . $filename);
 				return;
 			}
 			$query = $this->client->createExtract();
@@ -119,7 +156,6 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 			$query->setCommit(true);
 			$query->setOmitHeader(true);
 		}
-		
 		
 		$doc->id = $this->createIdFromDocument($document);
 		$doc->internalId = json_encode($document->getEntityId());
