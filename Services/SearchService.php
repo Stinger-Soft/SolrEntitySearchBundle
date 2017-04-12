@@ -272,8 +272,9 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$solrQuery = $this->getFacetedQuery($client, $query);
 		foreach($query->getFacets() as $facetKey => $values) {
 			if(count($values) <= 0) continue;
+			$escapedValues = $this->escapeFacetValues($facetKey, $values);
 			$facetKey = $this->escapeFacetKey($facetKey);
-			$solrQuery->createFilterQuery($facetKey)->setQuery($facetKey . ':(' . implode(' OR ', $values) . ')');
+			$solrQuery->createFilterQuery($facetKey)->setQuery($facetKey . ':(' . implode(' OR ', $escapedValues) . ')');
 		}
 		return $solrQuery;
 	}
@@ -289,6 +290,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		
 		$filteredQuery = $this->getFilteredFacetedQuery($client, $query);
 		$facetQuery = $this->getFacetedQuery($client, $query);
+		
 		$facetresultset = $client->select($facetQuery);
 		
 		$result = new KnpResultSet($client, $filteredQuery, $query->getSearchTerm());
@@ -312,6 +314,15 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$query->setRows(0);
 		$resultset = $client->execute($query);
 		return $resultset->getNumFound();
+	}
+	
+	protected function escapeFacetValues($facetKey, array $facetValues) {
+		if($facetKey == Document::FIELD_TYPE) {
+			return array_map(function($value) {
+				return str_replace('\\', '\\\\', $value);
+			}, $facetValues);
+		}
+		return $facetValues;
 	}
 
 	protected function escapeFacetKey($facetKey) {
