@@ -271,6 +271,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	protected function getFilteredFacetedQuery(Client $client, Query $query) {
 		$solrQuery = $this->getFacetedQuery($client, $query);
 		foreach($query->getFacets() as $facetKey => $values) {
+			if(count($values) <= 0) continue;
 			$facetKey = $this->escapeFacetKey($facetKey);
 			$solrQuery->createFilterQuery($facetKey)->setQuery($facetKey . ':(' . implode(' OR ', $values) . ')');
 		}
