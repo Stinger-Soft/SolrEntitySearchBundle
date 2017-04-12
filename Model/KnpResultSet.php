@@ -17,6 +17,8 @@ use StingerSoft\EntitySearchBundle\Model\PaginatableResultSet;
 use StingerSoft\EntitySearchBundle\Model\ResultSetAdapter;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use StingerSoft\EntitySearchBundle\Model\Document;
+use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
 
 class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, ContainerAwareInterface {
 	
@@ -39,6 +41,11 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	 * @var \Solarium\Client
 	 */
 	protected $client = null;
+	
+	/**
+	 * @var SlidingPagination|Document[]
+	 */
+	protected $lastResult = null;
 
 	/**
 	 *
@@ -60,10 +67,12 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	 */
 	public function paginate($page = 1, $limit = 10, array $options = array()) {
 		$paginator = $this->container->get('knp_paginator');
-		return $paginator->paginate(array(
+		$this->lastResult = $paginator->paginate(array(
 			$this->client,
 			$this->query 
 		), $page, $limit, $options);
+		
+		return $this->lastResult;
 	}
 
 	/**
@@ -91,5 +100,29 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 		}
 		
 		return $documents;
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 *
+	 * @see \StingerSoft\EntitySearchBundle\Model\ResultSet::getExcerpt()
+	 */
+	public function getExcerpt(Document $document) {
+		
+		/**
+		 * @var \Solarium\QueryType\Select\Result\Result $solrResult
+		 */
+		$solrResult = $this->lastResult->getCustomParameter('result');
+		
+		/**
+		 * @var \Solarium\QueryType\Select\Result\Highlighting\Highlighting $highlighting
+		 */
+		$highlighting = $solrResult->getHighlighting();
+		$docHighlight =  $highlighting->getResult($document->getFieldValue('id'));
+
+		if(!$docHighlight) return null;
+		
+		return $docHighlight->getField('content');
 	}
 }

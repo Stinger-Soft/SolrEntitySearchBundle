@@ -169,7 +169,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		
 
 		
-		if($query->getFile()) {
+		if($document->getFile()) {
 			$query->setDocument($doc);
 			$query->setCommit(true);
 			$client->extract($query);
