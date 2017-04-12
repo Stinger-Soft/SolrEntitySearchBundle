@@ -87,7 +87,8 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 				'localhost' => array(
 					'host' => $this->configuration->ipAddress,
 					'port' => $this->configuration->port,
-					'path' => $this->configuration->path 
+					'path' => $this->configuration->path,
+					'timeout' => 10000
 				) 
 			) 
 		);
@@ -137,18 +138,18 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	public function saveDocument(\StingerSoft\EntitySearchBundle\Model\Document $document) {
 		$client = $this->getClient();
 		
-		$update = $client->createUpdate();
+		$query= $client->createUpdate();
 		
 		// create a new document for the data
-		$doc = $update->createDocument();
+		$doc = $query->createDocument();
 		
-		if(false) {
+		if($document->getFile()) {
 			$filename = $document->getFile();
 			if(!file_exists($filename)) {
 				// $this->logger->error('Can\' find file ' . $filename);
 				return;
 			}
-			$query = $this->client->createExtract();
+			$query = $client->createExtract();
 			$doc = $query->createDocument();
 			
 			$query->setUprefix('attr_');
@@ -166,13 +167,20 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 			$doc->setField($key, $value);
 		}
 		
-		$update->addDocuments(array(
-			$doc 
-		));
-		$update->addCommit();
+
 		
-		// this executes the query and returns the result
-		$client->update($update);
+		if($query->getFile()) {
+			$query->setDocument($doc);
+			$query->setCommit(true);
+			$client->extract($query);
+		} else {
+			$query->addDocuments(array(
+				$doc
+			));
+			$query->addCommit(true);
+			// this executes the query and returns the result
+			$client->update($query);
+		}
 	}
 
 	/**
@@ -271,7 +279,8 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	protected function getFilteredFacetedQuery(Client $client, Query $query) {
 		$solrQuery = $this->getFacetedQuery($client, $query);
 		foreach($query->getFacets() as $facetKey => $values) {
-			if(count($values) <= 0) continue;
+			if(count($values) <= 0)
+				continue;
 			$escapedValues = $this->escapeFacetValues($facetKey, $values);
 			$facetKey = $this->escapeFacetKey($facetKey);
 			$solrQuery->createFilterQuery($facetKey)->setQuery($facetKey . ':(' . implode(' OR ', $escapedValues) . ')');
@@ -315,10 +324,10 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$resultset = $client->execute($query);
 		return $resultset->getNumFound();
 	}
-	
+
 	protected function escapeFacetValues($facetKey, array $facetValues) {
 		if($facetKey == Document::FIELD_TYPE) {
-			return array_map(function($value) {
+			return array_map(function ($value) {
 				return str_replace('\\', '\\\\', $value);
 			}, $facetValues);
 		}
