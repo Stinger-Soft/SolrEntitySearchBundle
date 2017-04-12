@@ -26,5 +26,6 @@ class Document extends DocumentAdapter {
 		$document->setEntityId($document->getFieldValue('internalId'));
 		return $document;
 	}
+	
 }
 

@@ -70,7 +70,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		// create a ping query
 		$ping = $client->createPing();
 		try {
-			$result = $client->ping($ping);
+			$client->ping($ping);
 			return true;
 		} catch(\Exception $e) {
 			return false;
@@ -104,6 +104,23 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		
 		// create a new document for the data
 		$doc = $update->createDocument();
+		
+		if(false) {
+			$filename = $document->getFile();
+			if(!file_exists($filename)) {
+				//$this->logger->error('Can\' find file ' . $filename);
+				return;
+			}
+			$query = $this->client->createExtract();
+			$doc = $query->createDocument();
+			
+			$query->setUprefix('attr_');
+			$query->setFile($filename);
+			$query->setCommit(true);
+			$query->setOmitHeader(true);
+		}
+		
+		
 		$doc->id = $this->createIdFromDocument($document);
 		$doc->internalId = json_encode($document->getEntityId());
 		$doc->clazz = $document->getEntityClass();
