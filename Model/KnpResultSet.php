@@ -12,13 +12,13 @@
 namespace StingerSoft\SolrEntitySearchBundle\Model;
 
 use Doctrine\ORM\Query;
-use Solarium\Core\Query\QueryInterface;
+use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
+use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\PaginatableResultSet;
 use StingerSoft\EntitySearchBundle\Model\ResultSetAdapter;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
-use StingerSoft\EntitySearchBundle\Model\Document;
-use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
+use StingerSoft\EntitySearchBundle\Model\Result\Correction;
 
 class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, ContainerAwareInterface {
 	
@@ -41,11 +41,18 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	 * @var \Solarium\Client
 	 */
 	protected $client = null;
-	
+
 	/**
+	 *
 	 * @var SlidingPagination|Document[]
 	 */
 	protected $lastResult = null;
+
+	/**
+	 *
+	 * @var \Solarium\QueryType\Select\Result\Result
+	 */
+	protected $lastSolrResult = null;
 
 	/**
 	 *
@@ -72,6 +79,8 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 			$this->query 
 		), $page, $limit, $options);
 		
+		$this->lastSolrResult = $this->lastResult->getCustomParameter('result');
+		
 		return $this->lastResult;
 	}
 
@@ -89,40 +98,55 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 		if($limit) {
 			$this->query->setRows($limit);
 		}
-		$solrResult = $this->client->select($this->query);
+		$this->lastSolrResult = $solrResult = $this->client->select($this->query);
 		
 		$this->query->setStart($oldStart);
 		$this->query->setRows($oldOffset);
 		
 		$documents = array();
 		foreach($solrResult->getDocuments() as $solrDocument) {
-			$documents[] = Document::createFromSolariumResult($solrDocument);
+			$documents[] = \StingerSoft\SolrEntitySearchBundle\Model\Document::createFromSolariumResult($solrDocument);
 		}
 		
 		return $documents;
 	}
-	
+
 	/**
 	 *
-	 * {@inheritDoc}
+	 * {@inheritdoc}
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Model\ResultSet::getExcerpt()
 	 */
 	public function getExcerpt(Document $document) {
-		
 		/**
-		 * @var \Solarium\QueryType\Select\Result\Result $solrResult
-		 */
-		$solrResult = $this->lastResult->getCustomParameter('result');
-		
-		/**
+		 *
 		 * @var \Solarium\QueryType\Select\Result\Highlighting\Highlighting $highlighting
 		 */
-		$highlighting = $solrResult->getHighlighting();
-		$docHighlight =  $highlighting->getResult($document->getFieldValue('id'));
-
-		if(!$docHighlight) return null;
+		$highlighting = $this->lastSolrResult->getHighlighting();
+		$docHighlight = $highlighting->getResult($document->getFieldValue('id'));
+		
+		if(!$docHighlight)
+			return null;
 		
 		return $docHighlight->getField('content');
+	}
+
+	public function getCorrections() {
+		$result = array();
+		
+// 		$spellcheckResult = $this->lastSolrResult->getSpellcheck();
+		
+		$data = $this->lastSolrResult->getData();
+		
+		if(!isset($data['spellcheck']) || !isset($data['spellcheck']['collations'])) {
+			return null;
+		}
+		foreach($data['spellcheck']['collations'] as $collation) {
+			$item = new Correction();
+			$item->setQuery($collation['collationQuery']);
+			$item->setHits($collation['hits']);
+			$result[] = $item;
+		}
+		return $result;
 	}
 }

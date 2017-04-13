@@ -159,6 +159,26 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertEquals($titleFacets['Haake Beck Kräusen'], 1);
 		$typeFacets = $facets->getFacet(\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE);
 		$this->assertCount(1, $typeFacets);
+		
+		
+	}
+	
+	public function testSearchCorrection() {
+		$service = $this->getSearchService();
+		$this->indexBeer($service);
+		$this->indexBeer($service, 'Haake Beck');
+		$this->indexBeer($service, 'Haake Beck Beer');
+		$this->indexBeer($service, 'Haake Beck Kräusen');
+		
+		$query = new Query('Hake Bcek', array(), array(
+			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TITLE,
+			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE
+		));
+		
+		$result = $service->search($query);
+		$this->assertCount(0, $result->getResults());
+		
+		$this->assertGreaterThan(0,count($result->getCorrections()));
 	}
 }
 

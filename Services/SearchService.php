@@ -257,6 +257,12 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$hl->setSimplePrefix('<em>');
 		$hl->setSimplePostfix('</em>');
 		
+		$solrQuery->addParam('spellcheck', 'on');
+		$solrQuery->addParam('spellcheck.build', 'on');
+		
+// 		$spellcheck = $solrQuery->getSpellcheck();
+// 		$spellcheck->setBuild(true);
+		
 		return $solrQuery;
 	}
 
@@ -301,6 +307,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$facetQuery = $this->getFacetedQuery($client, $query);
 		
 		$facetresultset = $client->select($facetQuery);
+// 		var_dump($facetresultset);
 		
 		$result = new KnpResultSet($client, $filteredQuery, $query->getSearchTerm());
 		$result->setContainer($this->container);
