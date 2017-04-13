@@ -134,9 +134,17 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 	public function getCorrections() {
 		$result = array();
 		
-// 		$spellcheckResult = $this->lastSolrResult->getSpellcheck();
+		//Solr < 6.5
+		// $spellcheckResult = $this->lastSolrResult->getSpellcheck();
 		
-		$data = $this->lastSolrResult->getData();
+		// Solr madness > 6.5
+		$rawData = $this->lastSolrResult->getResponse()->getBody();
+		
+		$rawData = preg_replace_callback('/"collation":{"collationQuery"/i', function ($match) {
+			return '"collation_'.uniqid().'":{"collationQuery"';
+		}, $rawData);
+		
+		$data = json_decode($rawData, true);
 		
 		if(!isset($data['spellcheck']) || !isset($data['spellcheck']['collations'])) {
 			return null;
@@ -147,6 +155,12 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 			$item->setHits($collation['hits']);
 			$result[] = $item;
 		}
+		
+		usort($result, function(Correction $a, Correction $b)
+		{
+			return $b->getHits() - $a->getHits();
+		});
+		
 		return $result;
 	}
 }
