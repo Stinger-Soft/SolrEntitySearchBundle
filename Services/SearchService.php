@@ -342,10 +342,14 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	}
 
 	protected function escapeFacetKey($facetKey) {
-		return $facetKey == Document::FIELD_TYPE ? 'entityType' : $facetKey;
+		$facetKey = $facetKey === Document::FIELD_TYPE ? 'entityType' : $facetKey;
+//		$facetKey = $facetKey === Document::FIELD_CONTENT_TYPE ? 'attr_Content-Type' : $facetKey;
+		return $facetKey;
 	}
 
 	protected function unescapeFacetKey($facetKey) {
-		return $facetKey == 'entityType' ? Document::FIELD_TYPE : $facetKey;
+		$facetKey = $facetKey == 'entityType' ? Document::FIELD_TYPE : $facetKey;
+//		$facetKey = $facetKey == 'attr_Content-Type' ? Document::FIELD_CONTENT_TYPE : $facetKey;
+		return $facetKey;
 	}
 }

@@ -24,6 +24,12 @@ class Document extends DocumentAdapter {
 		$document->setEntityType($document->getFieldValue('entityType'));
 		$document->setEntityClass($document->getFieldValue('clazz'));
 		$document->setEntityId($document->getFieldValue('internalId'));
+
+		// Map solr extractor properties to the document
+		$contentType = $document->getFieldValue("attr_Content-Type");
+		if($contentType !== null && $document->getFieldValue(DocumentAdapter::FIELD_CONTENT_TYPE) === null) {
+			$document->addField(DocumentAdapter::FIELD_CONTENT_TYPE, $contentType);
+		}
 		return $document;
 	}
 	
