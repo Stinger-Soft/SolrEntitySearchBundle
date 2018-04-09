@@ -150,10 +150,12 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 			return null;
 		}
 		foreach($data['spellcheck']['collations'] as $collation) {
-			$item = new Correction();
-			$item->setQuery($collation['collationQuery']);
-			$item->setHits($collation['hits']);
-			$result[] = $item;
+			if(is_array($collation) && isset($collation['collationQuery']) && isset($collation['hits'])) {
+				$item = new Correction();
+				$item->setQuery($collation['collationQuery']);
+				$item->setHits($collation['hits']);
+				$result[] = $item;
+			}
 		}
 		
 		usort($result, function(Correction $a, Correction $b)
