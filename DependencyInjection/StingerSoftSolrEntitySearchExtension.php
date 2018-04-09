@@ -13,6 +13,7 @@ namespace StingerSoft\SolrEntitySearchBundle\DependencyInjection;
 
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use StingerSoft\SolrEntitySearchBundle\Services\ClientConfiguration;
@@ -37,5 +38,6 @@ class StingerSoftSolrEntitySearchExtension extends Extension {
 		
 		$searchService = $container->getDefinition('stinger_soft.solr_entity_search.search_service');
 		$searchService->addArgument($config);
+		$searchService->addArgument($container->get('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE));
 	}
 }

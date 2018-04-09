@@ -9,8 +9,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace StingerSoft\SolrEntitySearchBundle\Services;
 
+use Psr\Log\LoggerInterface;
 use Solarium\Client;
 use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
@@ -21,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
 class SearchService extends AbstractSearchService implements ContainerAwareInterface {
-	
+
 	use ContainerAwareTrait;
 
 	/**
@@ -30,8 +32,14 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	protected $configuration;
 
-	public function __construct(array $config) {
+	/**
+	 * @var LoggerInterface
+	 */
+	protected $logger;
+
+	public function __construct(array $config, LoggerInterface $logger = null) {
 		$this->configuration = new ClientConfiguration($config);
+		$this->logger = $logger;
 	}
 
 	public function initializeBackend() {
@@ -54,7 +62,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		 */
 		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_FIELD, array(
 			'name' => $name,
-			'type' => $type 
+			'type' => $type
 		));
 		$command->setMultiValued($multivalued);
 		$command->setStored($stored);
@@ -85,12 +93,12 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$config = array(
 			'endpoint' => array(
 				'localhost' => array(
-					'host' => $this->configuration->ipAddress,
-					'port' => $this->configuration->port,
-					'path' => $this->configuration->path,
+					'host'    => $this->configuration->ipAddress,
+					'port'    => $this->configuration->port,
+					'path'    => $this->configuration->path,
 					'timeout' => 10000
-				) 
-			) 
+				)
+			)
 		);
 		$client = new \Solarium\Client($config);
 		return $client;
@@ -104,7 +112,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 
 	public function ping() {
 		$client = $this->getClient();
-		
+
 		// create a ping query
 		$ping = $client->createPing();
 		try {
@@ -137,49 +145,55 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	public function saveDocument(\StingerSoft\EntitySearchBundle\Model\Document $document) {
 		$client = $this->getClient();
-		
-		$query= $client->createUpdate();
-		
+
+		$query = $client->createUpdate();
+
 		// create a new document for the data
 		$doc = $query->createDocument();
-		
+
 		if($document->getFile()) {
 			$filename = $document->getFile();
 			if(!file_exists($filename)) {
-				// $this->logger->error('Can\' find file ' . $filename);
+				if($this->logger) {
+					$this->logger->error('Can\' find file ' . $filename);
+				}
 				return;
 			}
 			$query = $client->createExtract();
 			$doc = $query->createDocument();
-			
+
 			$query->setUprefix('attr_');
 			$query->setFile($filename);
 			$query->setCommit(true);
 			$query->setOmitHeader(true);
 		}
-		
+
 		$doc->id = $this->createIdFromDocument($document);
 		$doc->internalId = json_encode($document->getEntityId());
 		$doc->clazz = $document->getEntityClass();
 		$doc->entityType = $document->getEntityType();
-		
+
 		foreach($document->getFields() as $key => $value) {
 			$doc->setField($key, $value);
 		}
-		
 
-		
-		if($document->getFile()) {
-			$query->setDocument($doc);
-			$query->setCommit(true);
-			$client->extract($query);
-		} else {
-			$query->addDocuments(array(
-				$doc
-			));
-			$query->addCommit(true);
-			// this executes the query and returns the result
-			$client->update($query);
+		try {
+			if($document->getFile()) {
+				$query->setDocument($doc);
+				$query->setCommit(true);
+				$client->extract($query);
+			} else {
+				$query->addDocuments(array(
+					$doc
+				));
+				$query->addCommit(true);
+				// this executes the query and returns the result
+				$client->update($query);
+			}
+		} catch(\Exception $exception) {
+			if($this->logger) {
+				$this->logger->critical('Failed to save Document!!', $exception);
+			}
 		}
 	}
 
@@ -191,16 +205,22 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	public function removeDocument(\StingerSoft\EntitySearchBundle\Model\Document $document) {
 		$client = $this->getClient();
-		
+
 		// get an update query instance
 		$update = $client->createUpdate();
-		
+
 		// add the delete query and a commit command to the update query
 		$update->addDeleteQuery('id:' . $this->createIdFromDocument($document, true));
 		$update->addCommit();
-		
-		// this executes the query and returns the result
-		$client->update($update);
+
+		try {
+			// this executes the query and returns the result
+			$client->update($update);
+		} catch(\Exception $exception) {
+			if($this->logger) {
+				$this->logger->critical('Failed to remove Document!!', $exception);
+			}
+		}
 	}
 
 	/**
@@ -211,34 +231,34 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	public function autocomplete($search, $maxResults = 10) {
 		$client = $this->getClient();
-		
+
 		// get a suggester query instance
 		$query = $client->createSuggester();
 		$query->setQuery($search); // multiple terms
-		
+
 		$query->addParam('suggest.dictionary', 'PecSuggester');
 		$query->setDictionary('PecSuggester');
-		
+
 		$query->setHandler('suggest');
 		$query->setOnlyMorePopular(true);
-		
+
 		$query->setCount($maxResults);
 		$query->addParam('suggest.count', $maxResults);
-		
+
 		$query->addParam('suggest.build', 'true');
-		
+
 		$query->setCollate(true);
-		
+
 		// this executes the query and returns the result
 		$resultset = $client->suggester($query);
-		
+
 		$results = json_decode($resultset->getResponse()->getBody(), true);
 		$results = $results['suggest']['PecSuggester'];
-		
+
 		$result = array();
-		
+
 		// display results for each term
-		foreach($results as $term => $termResult) {
+		foreach($results as $termResult) {
 			foreach($termResult['suggestions'] as $term) {
 				$result[] = $term['term'];
 			}
@@ -247,28 +267,24 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	}
 
 	protected function getBasicQuery(Client $client, Query $query) {
-		$client = $this->getClient();
 		$solrQuery = $client->createSelect();
 		$solrQuery->setQuery($query->getSearchTerm());
-		
+
 		$hl = $solrQuery->getHighlighting();
 		$hl->setSnippets(3);
 		$hl->setFields('content');
 		$hl->setSimplePrefix('<em>');
 		$hl->setSimplePostfix('</em>');
-		
+
 		$solrQuery->addParam('spellcheck', 'on');
 		$solrQuery->addParam('spellcheck.build', 'on');
-		
-// 		$spellcheck = $solrQuery->getSpellcheck();
-// 		$spellcheck->setBuild(true);
-		
+
 		return $solrQuery;
 	}
 
 	protected function getFacetedQuery(Client $client, Query $query) {
 		$solrQuery = $this->getBasicQuery($client, $query);
-		
+
 		// get the facetset component
 		$facetSet = $solrQuery->getFacetSet();
 		if($query->getUsedFacets() != null) {
@@ -278,7 +294,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 				$facetField->setField($facetKey);
 			}
 		}
-		
+
 		return $solrQuery;
 	}
 
@@ -302,16 +318,15 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	public function search(Query $query) {
 		$client = $this->getClient();
-		
+
 		$filteredQuery = $this->getFilteredFacetedQuery($client, $query);
 		$facetQuery = $this->getFacetedQuery($client, $query);
-		
+
 		$facetresultset = $client->select($facetQuery);
-// 		var_dump($facetresultset);
-		
+
 		$result = new KnpResultSet($client, $filteredQuery, $query->getSearchTerm());
 		$result->setContainer($this->container);
-		
+
 		$facetSet = new FacetSetAdapter();
 		foreach($facetresultset->getFacetSet() as $facetKey => $facetValues) {
 			$facetKey = $this->unescapeFacetKey($facetKey);
@@ -320,7 +335,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 			}
 		}
 		$result->setFacets($facetSet);
-		
+
 		return $result;
 	}
 
@@ -334,7 +349,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 
 	protected function escapeFacetValues($facetKey, array $facetValues) {
 		if($facetKey == Document::FIELD_TYPE) {
-			return array_map(function ($value) {
+			return array_map(function($value) {
 				return str_replace('\\', '\\\\', $value);
 			}, $facetValues);
 		}
@@ -348,7 +363,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	}
 
 	protected function unescapeFacetKey($facetKey) {
-		$facetKey = $facetKey == 'entityType' ? Document::FIELD_TYPE : $facetKey;
+		$facetKey = $facetKey === 'entityType' ? Document::FIELD_TYPE : $facetKey;
 //		$facetKey = $facetKey == 'attr_Content-Type' ? Document::FIELD_CONTENT_TYPE : $facetKey;
 		return $facetKey;
 	}
