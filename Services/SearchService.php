@@ -219,14 +219,11 @@ class SearchService extends AbstractSearchService {
 		$query->setDictionary('PecSuggester');
 
 		$query->setHandler('suggest');
-		$query->setOnlyMorePopular(true);
 
 		$query->setCount($maxResults);
 		$query->addParam('suggest.count', $maxResults);
 
 		$query->addParam('suggest.build', 'true');
-
-		$query->setCollate(true);
 
 		// this executes the query and returns the result
 		$resultset = $client->suggester($query);

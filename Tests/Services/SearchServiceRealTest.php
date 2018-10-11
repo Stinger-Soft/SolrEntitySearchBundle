@@ -2,14 +2,13 @@
 
 namespace Tests\Services;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\Paginator;
-use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
 use StingerSoft\EntitySearchBundle\Tests\AbstractORMTestCase;
 use StingerSoft\EntitySearchBundle\Tests\Fixtures\ORM\Beer;
 use StingerSoft\EntitySearchBundle\Tests\Fixtures\ORM\Car;
 use StingerSoft\SolrEntitySearchBundle\Services\SearchService;
-use Symfony\Component\DependencyInjection\Container;
 
 class SearchServiceRealTest extends AbstractORMTestCase {
 
@@ -25,8 +24,8 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		parent::setUp();
 		$this->getMockSqliteEntityManager();
 		$this->indexCount = 0;
-		$this->getSearchService()->clearIndex();
-		$this->assertEquals(0, $this->getSearchService()->getIndexSize());
+		$this->getSearchService($this->em)->clearIndex();
+		$this->assertEquals(0, $this->getSearchService($this->em)->getIndexSize());
 	}
 
 	/**
@@ -46,25 +45,19 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 	 *
 	 * @return \StingerSoft\SolrEntitySearchBundle\Services\SearchService
 	 */
-	protected function getSearchService() {
-		$service = new SearchService(array(
+	protected function getSearchService(EntityManagerInterface $em = null) {
+		$service = new SearchService(new Paginator(), array(
 			'path' => '/solr/platform/',
 			'port' => '8983',
 			'ipaddress' => '127.0.0.1' 
 		));
-		$service->setObjectManager($this->em);
-		$service->setContainer($this->getMockContainer());
+		$service->setObjectManager($em ?? $this->em);
 		if(!$service->ping()) {
 			self::markTestSkipped('No Solr instance found');
 		}
 		return $service;
 	}
 
-	protected function getMockContainer() {
-		$container = new Container();
-		$container->set('knp_paginator', new Paginator());
-		return $container;
-	}
 
 	protected function indexBeer(SearchService $service, $title = 'Hemelinger') {
 		$beer = new Beer();
@@ -155,8 +148,8 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertCount(3, $titleFacets);
 		$this->assertArrayHasKey('Haake Beck', $titleFacets);
 		$this->assertArrayHasKey('Haake Beck Kräusen', $titleFacets);
-		$this->assertEquals($titleFacets['Haake Beck'], 2);
-		$this->assertEquals($titleFacets['Haake Beck Kräusen'], 1);
+		$this->assertEquals($titleFacets['Haake Beck']['count'], 2);
+		$this->assertEquals($titleFacets['Haake Beck Kräusen']['count'], 1);
 		$typeFacets = $facets->getFacet(\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE);
 		$this->assertCount(1, $typeFacets);
 		
