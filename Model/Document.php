@@ -22,7 +22,6 @@ class Document extends DocumentAdapter {
 		foreach($solrDocument->getFields() as $key => $value) {
 			$document->addField($key, $value);
 		}
-		dump($document);
 		$document->setEntityType(self::getSingleValueFieldFromSolariumResult($document, 'entityType'));
 		$document->setEntityClass(self::getSingleValueFieldFromSolariumResult($document, 'clazz'));
 		$document->setEntityId(self::getSingleValueFieldFromSolariumResult($document, 'internalId'));
@@ -38,12 +37,27 @@ class Document extends DocumentAdapter {
 	protected static function getSingleValueFieldFromSolariumResult(Document $document, $fieldName) {
 		$value = $document->getFieldValue($fieldName);
 		if(\is_array($value)) {
-			dump(current($value));
 			return current($value);
 		}
-		dump($fieldName);
-		dump($value);
 		return $value;
+	}
+
+	/**
+	 *
+	 * {@inheritdoc}
+	 *
+	 * @see \StingerSoft\EntitySearchBundle\Model\Document::getFieldValue()
+	 */
+	public function getFieldValue($fieldName) {
+		$fallBackFieldname = \strtolower($fieldName);
+		if(!isset($this->fields[$fieldName]) && isset($this->fields[$fallBackFieldname])) {
+			$fieldName = $fallBackFieldname;
+		}
+		$fallBackFieldname = 'attr_'.\strtolower($fieldName);
+		if(!isset($this->fields[$fieldName]) && isset($this->fields[$fallBackFieldname])) {
+			$fieldName = $fallBackFieldname;
+		}
+		return $this->fields[$fieldName] ?? null;
 	}
 
 }
