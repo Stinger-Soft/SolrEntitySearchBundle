@@ -16,7 +16,7 @@ use StingerSoft\SolrEntitySearchBundle\Model\Document;
  */
 class SolariumQuerySubscriber implements EventSubscriberInterface {
 
-	public function items(ItemsEvent $event) {
+	public function items(ItemsEvent $event) : void {
 		if(is_array($event->target) && 2 == count($event->target)) {
 			$values = array_values($event->target);
 			list($client, $query) = $values;

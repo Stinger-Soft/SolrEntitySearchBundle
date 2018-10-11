@@ -4,11 +4,25 @@ parameters:
 
   
 services:
+  _defaults:
+    autoconfigure: true
+    autowire: true
+    public: false
+
+  StingerSoft\SolrEntitySearchBundle\Command\:
+    resource: '../../Command/*'
+    autowire: true
+    autoconfigure: true
+    public: false
+    lazy: true
+
+  StingerSoft\SolrEntitySearchBundle\Services\SearchService:
+    alias: stinger_soft.solr_entity_search.search_service
+
+
   stinger_soft.solr_entity_search.search_service:
     class: '%stinger_soft.solr_entity_search.search_service.class%'
-    calls:
-      - [setContainer, ['@service_container']]
-      
+
   stinger_soft.solr_entity_search.knp_query_subscriber:
     class: '%stinger_soft.solr_entity_search.knp_query_subscriber.class%'
     tags:

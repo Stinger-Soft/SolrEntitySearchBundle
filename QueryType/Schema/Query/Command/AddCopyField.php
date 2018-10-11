@@ -15,11 +15,11 @@ use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query;
 
 class AddCopyField extends AbstractSchemaModification {
 	
-	public function getCommandType() {
+	public function getCommandType() : string {
 		return Query::COMMAND_ADD_COPY_FIELD;
 	}
 
-	public function getRequiredFields() {
+	public function getRequiredFields() : array {
 		return array(
 			'source',
 			'dest'

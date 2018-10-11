@@ -9,11 +9,12 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace StingerSoft\SolrEntitySearchBundle\QueryType\Schema;
 
+use Solarium\Core\Client\Request;
 use Solarium\Core\Query\AbstractRequestBuilder as BaseRequestBuilder;
 use Solarium\Core\Query\QueryInterface;
-use Solarium\Core\Client\Request;
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query;
 
 class RequestBuilder extends BaseRequestBuilder {
@@ -24,7 +25,7 @@ class RequestBuilder extends BaseRequestBuilder {
 	 *
 	 * @see \Solarium\Core\Query\AbstractRequestBuilder::build()
 	 */
-	public function build(QueryInterface $query) {
+	public function build(QueryInterface $query): Request {
 		$request = parent::build($query);
 		$request->setMethod(Request::METHOD_POST);
 		$request->setRawData($this->getRawData($query));
@@ -36,13 +37,13 @@ class RequestBuilder extends BaseRequestBuilder {
 	 *
 	 * Each commandtype is delegated to a separate builder method.
 	 *
-	 * @param Query $query        	
+	 * @param Query $query
 	 *
-	 * @throws RuntimeException
+	 * @throws \RuntimeException
 	 *
 	 * @return string
 	 */
-	public function getRawData(Query $query) {
+	public function getRawData(Query $query): string {
 		$data = array();
 		foreach($query->getCommands() as $command) {
 			$data[$command->getCommandType()] = $command->getOptions();

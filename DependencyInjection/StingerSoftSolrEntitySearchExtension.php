@@ -37,7 +37,7 @@ class StingerSoftSolrEntitySearchExtension extends Extension {
 		$loader->load('services.yml');
 		
 		$searchService = $container->getDefinition('stinger_soft.solr_entity_search.search_service');
-		$searchService->addArgument($config);
-		$searchService->addArgument($container->get('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE));
+		$searchService->setArgument('$config', $config);
+//		$searchService->addArgument($container->get('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE));
 	}
 }
