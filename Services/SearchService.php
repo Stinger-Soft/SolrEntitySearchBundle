@@ -171,7 +171,7 @@ class SearchService extends AbstractSearchService {
 			}
 		} catch(\Exception $exception) {
 			if($this->logger) {
-				$this->logger->critical('Failed to save Document!!', $exception);
+				$this->logger->critical('Failed to save Document!!', ['exception' => $exception]);
 			}
 		}
 	}
