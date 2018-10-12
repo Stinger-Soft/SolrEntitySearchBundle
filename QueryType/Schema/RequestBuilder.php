@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -43,7 +44,7 @@ class RequestBuilder extends BaseRequestBuilder {
 	 *
 	 * @return string
 	 */
-	public function getRawData(Query $query): string {
+	public function getRawData(QueryInterface $query): string {
 		$data = array();
 		foreach($query->getCommands() as $command) {
 			$data[$command->getCommandType()] = $command->getOptions();

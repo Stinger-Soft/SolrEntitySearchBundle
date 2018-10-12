@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Entity Search package.
@@ -53,7 +54,7 @@ class Document extends DocumentAdapter {
 		if(!isset($this->fields[$fieldName]) && isset($this->fields[$fallBackFieldname])) {
 			$fieldName = $fallBackFieldname;
 		}
-		$fallBackFieldname = 'attr_'.\strtolower($fieldName);
+		$fallBackFieldname = 'attr_' . \strtolower($fieldName);
 		if(!isset($this->fields[$fieldName]) && isset($this->fields[$fallBackFieldname])) {
 			$fieldName = $fallBackFieldname;
 		}

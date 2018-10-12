@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -262,7 +263,7 @@ class SearchService extends AbstractSearchService {
 		foreach($facetresultset->getFacetSet() as $facetKey => $facetValues) {
 			$facetKey = $this->unescapeFacetKey($facetKey);
 			foreach($facetValues as $facetValue => $count) {
-				$facetSet->addFacetValue($facetKey, $facetValue, $facetValue, $count);
+				$facetSet->addFacetValue($facetKey, (string)$facetValue, $facetValue, (int)$count);
 			}
 		}
 		$result->setFacets($facetSet);
@@ -270,7 +271,7 @@ class SearchService extends AbstractSearchService {
 		return $result;
 	}
 
-	public function getIndexSize() : int {
+	public function getIndexSize(): int {
 		$client = $this->getClient();
 		$query = $client->createSelect();
 		$query->setRows(0);
@@ -282,7 +283,7 @@ class SearchService extends AbstractSearchService {
 	 *
 	 * @return \Solarium\Client
 	 */
-	protected function getClient() : Client {
+	protected function getClient(): Client {
 		$config = array(
 			'endpoint' => array(
 				'localhost' => array(

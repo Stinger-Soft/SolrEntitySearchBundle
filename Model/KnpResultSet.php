@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Entity Search package.
@@ -20,12 +21,8 @@ use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\PaginatableResultSet;
 use StingerSoft\EntitySearchBundle\Model\Result\Correction;
 use StingerSoft\EntitySearchBundle\Model\ResultSetAdapter;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
-class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, ContainerAwareInterface {
-
-	use ContainerAwareTrait;
+class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 
 	/**
 	 *
@@ -137,12 +134,12 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet, Con
 		if(!$docHighlight) {
 			return null;
 		}
-		$excerpts = $docHighlight->getField('content') ;
+		$excerpts = $docHighlight->getField('content');
 
 		return $excerpts ? \implode(' ', $excerpts) : null;
 	}
 
-	public function getCorrections() : array {
+	public function getCorrections(): array {
 		$result = array();
 
 		//Solr < 6.5
