@@ -135,7 +135,7 @@ class SearchService extends AbstractSearchService {
 			$filename = $document->getFile();
 			if(!file_exists($filename)) {
 				if($this->logger) {
-					$this->logger->error('Can\' find file ' . $filename);
+					$this->logger->error('Can\'t find file ' . $filename);
 				}
 				return;
 			}
@@ -325,7 +325,7 @@ class SearchService extends AbstractSearchService {
 
 		// get the facetset component
 		$facetSet = $solrQuery->getFacetSet();
-		if($query->getUsedFacets() != null) {
+		if($query->getUsedFacets() !== null) {
 			foreach($query->getUsedFacets() as $facetKey) {
 				$facetKey = $this->escapeFacetKey($facetKey);
 				$facetField = $facetSet->createFacetField($facetKey);
@@ -349,7 +349,7 @@ class SearchService extends AbstractSearchService {
 	}
 
 	protected function escapeFacetValues($facetKey, array $facetValues) {
-		if($facetKey == Document::FIELD_TYPE) {
+		if($facetKey === Document::FIELD_TYPE) {
 			return array_map(function($value) {
 				return str_replace('\\', '\\\\', $value);
 			}, $facetValues);
