@@ -83,7 +83,7 @@ class SearchService extends AbstractSearchService {
 		 *
 		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField $command
 		 */
-		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_COPY_FIELDFIELD);
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_COPY_FIELD, array());
 		$command->setSource($source);
 		$command->setDestination($destination);
 		$query->add('copy_' . $source . '_' . $destination, $command);
