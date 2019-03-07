@@ -170,7 +170,7 @@ class SearchService extends AbstractSearchService {
 			}
 			$query = $client->createExtract();
 			$doc = $query->createDocument();
-
+			$query->setOptions(['literalsOverride' => false, 'lowernames' => false], false);
 			$query->setUprefix('attr_');
 			$query->setFile($filename);
 			$query->setCommit(true);
