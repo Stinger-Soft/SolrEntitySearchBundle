@@ -16,11 +16,13 @@ namespace StingerSoft\SolrEntitySearchBundle\Services;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Solarium\Client;
+use Solarium\Exception\HttpException;
 use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
 use StingerSoft\EntitySearchBundle\Model\Result\FacetSetAdapter;
 use StingerSoft\EntitySearchBundle\Model\ResultSet;
 use StingerSoft\EntitySearchBundle\Services\AbstractSearchService;
+use StingerSoft\PhpCommons\String\Utils;
 use StingerSoft\SolrEntitySearchBundle\Model\KnpResultSet;
 
 class SearchService extends AbstractSearchService {
@@ -53,8 +55,10 @@ class SearchService extends AbstractSearchService {
 		$this->addField('clazz', 'string', false);
 		$this->addField('entityType', 'string', false);
 		$this->addField('internalId', 'string', false);
+		$this->addField('content', 'text_general');
 		$this->addField('editors', 'strings');
 		$this->addField('textSuggest', 'strings');
+		$this->addCopyField('*', '_text_');
 		$this->addCopyField('title', 'textSuggest');
 	}
 
@@ -66,6 +70,31 @@ class SearchService extends AbstractSearchService {
 		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField $command
 		 */
 		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_FIELD, array(
+			'name' => $name,
+			'type' => $type
+		));
+		$command->setMultiValued($multivalued);
+		$command->setStored($stored);
+		$command->setIndexed($indexed);
+		$query->add('add_' . $name, $command);
+		try {
+			$client->execute($query);
+		}catch(HttpException $ex) {
+			// field exists, replacing it..
+			if(strstr($ex->getBody(), 'already') === false) {
+				$this->replaceField($name, $type, $multivalued, $stored, $indexed);
+			}
+		}
+	}
+
+	public function replaceField($name, $type, $multivalued = true, $stored = true, $indexed = true) {
+		$client = $this->getClient();
+		$query = new \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query();
+		/**
+		 *
+		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField $command
+		 */
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_REPLACE_FIELD, array(
 			'name' => $name,
 			'type' => $type
 		));
@@ -306,6 +335,7 @@ class SearchService extends AbstractSearchService {
 
 	protected function getBasicQuery(Client $client, Query $query) {
 		$solrQuery = $client->createSelect();
+		$solrQuery->setQueryDefaultField('_text_');
 		$solrQuery->setQuery($query->getSearchTerm());
 
 		$hl = $solrQuery->getHighlighting();

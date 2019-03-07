@@ -31,6 +31,8 @@ class Query extends BaseQuery {
 	 */
 	const COMMAND_ADD_COPY_FIELD = 'add-copy-field';
 
+	const COMMAND_REPLACE_FIELD = 'replace-field';
+
 	/**
 	 * TODO add resultclass and document class
 	 * @var array
@@ -44,6 +46,7 @@ class Query extends BaseQuery {
 
 	protected $commandTypes = array(
 		self::COMMAND_ADD_FIELD      => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField',
+		self::COMMAND_REPLACE_FIELD  => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\ReplaceField',
 		self::COMMAND_ADD_COPY_FIELD => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField',
 	);
 
