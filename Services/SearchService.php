@@ -58,6 +58,7 @@ class SearchService extends AbstractSearchService {
 		$this->addField('content', 'text_general');
 		$this->addField('editors', 'strings');
 		$this->addField('textSuggest', 'strings');
+		$this->addField('Content-Type', 'string', false);
 		$this->addCopyField('*', '_text_');
 		$this->addCopyField('title', 'textSuggest');
 	}
