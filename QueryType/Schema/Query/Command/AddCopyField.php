@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -9,17 +10,18 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command;
 
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query;
 
 class AddCopyField extends AbstractSchemaModification {
-	
-	public function getCommandType() {
+
+	public function getCommandType(): string {
 		return Query::COMMAND_ADD_COPY_FIELD;
 	}
 
-	public function getRequiredFields() {
+	public function getRequiredFields(): array {
 		return array(
 			'source',
 			'dest'
@@ -33,14 +35,14 @@ class AddCopyField extends AbstractSchemaModification {
 	public function getSource() {
 		return $this->getOption('source');
 	}
-	
+
 	public function setDestination($value) {
 		$this->setOption('dest', $value);
 	}
-	
+
 	public function getDestination() {
 		return $this->getOption('dest');
 	}
-	
+
 }
 

@@ -15,12 +15,14 @@ namespace StingerSoft\SolrEntitySearchBundle\Command;
 
 use StingerSoft\SolrEntitySearchBundle\Services\SearchService;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class CreateSchemaCommand extends Command {
+class AddFieldCommand extends Command {
 
-	protected static $defaultName = 'stinger:search-solr:init';
+	protected static $defaultName = 'stinger:search-solr:add-field';
 
 	protected $searchService;
 
@@ -37,7 +39,12 @@ class CreateSchemaCommand extends Command {
 	 * @see \Symfony\Component\Console\Command\Command::configure()
 	 */
 	protected function configure() {
-		$this->setDescription('Clears the configured search index');
+		$this->setDescription('Adds a single field to the search index');
+		$this->addArgument('name', InputArgument::REQUIRED);
+		$this->addArgument('type', InputArgument::REQUIRED);
+		$this->addOption('multivalued', 'm', InputOption::VALUE_NONE);
+		$this->addOption('stored', 's', InputOption::VALUE_NONE);
+		$this->addOption('indexed', 'i', InputOption::VALUE_NONE);
 	}
 
 	/**
@@ -47,7 +54,12 @@ class CreateSchemaCommand extends Command {
 	 * @see \Symfony\Component\Console\Command\Command::execute()
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->searchService->initializeBackend();
+		$name = $input->getArgument('name');
+		$type = $input->getArgument('type');
+		$multivalued = $input->getOption('multivalued');
+		$stored = $input->getOption('stored');
+		$indexed = $input->getOption('indexed');
+		$this->searchService->addField($name, $type, $multivalued, $stored, $indexed);
 	}
 }
 

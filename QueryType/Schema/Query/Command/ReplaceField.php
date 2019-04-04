@@ -15,10 +15,10 @@ namespace StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command;
 
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query;
 
-class AddField extends AbstractSchemaModification {
+class ReplaceField extends AbstractSchemaModification {
 
 	public function getCommandType(): string {
-		return Query::COMMAND_ADD_FIELD;
+		return Query::COMMAND_REPLACE_FIELD;
 	}
 
 	public function getRequiredFields(): array {

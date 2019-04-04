@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -9,12 +10,14 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query;
 
 use Solarium\Core\Query\AbstractQuery as BaseQuery;
-use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\RequestBuilder;
+use Solarium\Core\Query\ResponseParserInterface;
 use Solarium\Exception\InvalidArgumentException;
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AbstractSchemaModification;
+use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\RequestBuilder;
 
 class Query extends BaseQuery {
 
@@ -22,26 +25,28 @@ class Query extends BaseQuery {
 	 * Update command add field.
 	 */
 	const COMMAND_ADD_FIELD = 'add-field';
-	
+
 	/**
 	 * Update command add copy field.
 	 */
-	const COMMAND_ADD_COPY_FIELD= 'add-copy-field';
+	const COMMAND_ADD_COPY_FIELD = 'add-copy-field';
 
-	
+	const COMMAND_REPLACE_FIELD = 'replace-field';
+
 	/**
 	 * TODO add resultclass and document class
 	 * @var array
 	 */
 	protected $options = array(
-		'handler' => 'schema',
-		'resultclass' => 'Solarium\QueryType\Update\Result',
+		'handler'       => 'schema',
+		'resultclass'   => 'Solarium\QueryType\Update\Result',
 		'documentclass' => 'Solarium\QueryType\Update\Query\Document\Document',
-		'omitheader' => false 
+		'omitheader'    => false
 	);
 
 	protected $commandTypes = array(
-		self::COMMAND_ADD_FIELD => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField',
+		self::COMMAND_ADD_FIELD      => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField',
+		self::COMMAND_REPLACE_FIELD  => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\ReplaceField',
 		self::COMMAND_ADD_COPY_FIELD => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField',
 	);
 
@@ -53,7 +58,7 @@ class Query extends BaseQuery {
 	 *
 	 * @see \Solarium\Core\Query\QueryInterface::getType()
 	 */
-	public function getType() {
+	public function getType(): string {
 		return 'schema';
 	}
 
@@ -63,7 +68,7 @@ class Query extends BaseQuery {
 	 *
 	 * @see \Solarium\Core\Query\QueryInterface::getRequestBuilder()
 	 */
-	public function getRequestBuilder() {
+	public function getRequestBuilder(): RequestBuilder {
 		return new RequestBuilder();
 	}
 
@@ -73,7 +78,7 @@ class Query extends BaseQuery {
 	 *
 	 * @see \Solarium\Core\Query\QueryInterface::getResponseParser()
 	 */
-	public function getResponseParser() {
+	public function getResponseParser(): ?ResponseParserInterface {
 		return null;
 	}
 
@@ -82,7 +87,7 @@ class Query extends BaseQuery {
 	 *
 	 * @return AbstractSchemaModification[]
 	 */
-	public function getCommands() {
+	public function getCommands(): array {
 		return $this->commands;
 	}
 
@@ -91,20 +96,20 @@ class Query extends BaseQuery {
 	 *
 	 * @throws InvalidArgumentException
 	 *
-	 * @param string $type        	
-	 * @param mixed $options        	
+	 * @param string $type
+	 * @param mixed $options
 	 *
 	 * @return AbstractSchemaModification
 	 */
-	public function createCommand($type, $options = null) {
+	public function createCommand($type, $options = null): AbstractSchemaModification {
 		$type = strtolower($type);
-		
+
 		if(!isset($this->commandTypes[$type])) {
 			throw new InvalidArgumentException("Update commandtype unknown: " . $type);
 		}
-		
+
 		$class = $this->commandTypes[$type];
-		
+
 		return new $class($options);
 	}
 
@@ -114,18 +119,18 @@ class Query extends BaseQuery {
 	 * The command must be an instance of one of the Solarium\QueryType\Update_*
 	 * classes.
 	 *
-	 * @param string $key        	
-	 * @param object $command        	
+	 * @param string $key
+	 * @param object $command
 	 *
 	 * @return self Provides fluent interface
 	 */
-	public function add($key, $command) {
-		if(0 !== strlen($key)) {
+	public function add(string $key, $command): self {
+		if('' !== $key) {
 			$this->commands[$key] = $command;
 		} else {
 			$this->commands[] = $command;
 		}
-		
+
 		return $this;
 	}
 
@@ -134,11 +139,11 @@ class Query extends BaseQuery {
 	 *
 	 * You can remove a command by passing its key or by passing the command instance.
 	 *
-	 * @param string|\Solarium\QueryType\Update\Query\Command\AbstractCommand $command        	
+	 * @param string|\Solarium\QueryType\Update\Query\Command\AbstractCommand $command
 	 *
 	 * @return self Provides fluent interface
 	 */
-	public function remove($command) {
+	public function remove($command): self {
 		if(is_object($command)) {
 			foreach($this->commands as $key => $instance) {
 				if($instance === $command) {
@@ -151,7 +156,7 @@ class Query extends BaseQuery {
 				unset($this->commands[$command]);
 			}
 		}
-		
+
 		return $this;
 	}
 }

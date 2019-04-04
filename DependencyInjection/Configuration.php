@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -9,6 +10,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace StingerSoft\SolrEntitySearchBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -29,7 +31,7 @@ class Configuration implements ConfigurationInterface {
 	public function getConfigTreeBuilder() {
 		$treeBuilder = new TreeBuilder();
 		$root = $treeBuilder->root('stinger_soft_solr_entity_search');
-		
+
 		// @formatter:off
 		$root->children()
 			->scalarNode('ipaddress')->defaultValue('127.0.0.1')->end()
@@ -37,7 +39,7 @@ class Configuration implements ConfigurationInterface {
 			->scalarNode('path')->defaultValue('/solr/platform/')->end()
 		->end();
 		// @formatter:on
-		
+
 		return $treeBuilder;
 	}
 }

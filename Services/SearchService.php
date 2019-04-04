@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /*
  * This file is part of the Stinger Solr Entity Search package.
@@ -12,19 +13,19 @@
 
 namespace StingerSoft\SolrEntitySearchBundle\Services;
 
+use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Solarium\Client;
+use Solarium\Exception\HttpException;
 use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
 use StingerSoft\EntitySearchBundle\Model\Result\FacetSetAdapter;
+use StingerSoft\EntitySearchBundle\Model\ResultSet;
 use StingerSoft\EntitySearchBundle\Services\AbstractSearchService;
+use StingerSoft\PhpCommons\String\Utils;
 use StingerSoft\SolrEntitySearchBundle\Model\KnpResultSet;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
-class SearchService extends AbstractSearchService implements ContainerAwareInterface {
-
-	use ContainerAwareTrait;
+class SearchService extends AbstractSearchService {
 
 	/**
 	 *
@@ -37,9 +38,15 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 */
 	protected $logger;
 
-	public function __construct(array $config, LoggerInterface $logger = null) {
+	/**
+	 * @var PaginatorInterface
+	 */
+	protected $paginator;
+
+	public function __construct(PaginatorInterface $paginator, array $config, LoggerInterface $logger = null) {
 		$this->configuration = new ClientConfiguration($config);
 		$this->logger = $logger;
+		$this->paginator = $paginator;
 	}
 
 	public function initializeBackend() {
@@ -48,8 +55,11 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$this->addField('clazz', 'string', false);
 		$this->addField('entityType', 'string', false);
 		$this->addField('internalId', 'string', false);
+		$this->addField('content', 'text_general');
 		$this->addField('editors', 'strings');
 		$this->addField('textSuggest', 'strings');
+		$this->addField('Content-Type', 'string', false);
+		$this->addCopyField('*', '_text_');
 		$this->addCopyField('title', 'textSuggest');
 	}
 
@@ -68,6 +78,31 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$command->setStored($stored);
 		$command->setIndexed($indexed);
 		$query->add('add_' . $name, $command);
+		try {
+			$client->execute($query);
+		}catch(HttpException $ex) {
+			// field exists, replacing it..
+			if(strstr($ex->getBody(), 'already') === false) {
+				$this->replaceField($name, $type, $multivalued, $stored, $indexed);
+			}
+		}
+	}
+
+	public function replaceField($name, $type, $multivalued = true, $stored = true, $indexed = true) {
+		$client = $this->getClient();
+		$query = new \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query();
+		/**
+		 *
+		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField $command
+		 */
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_REPLACE_FIELD, array(
+			'name' => $name,
+			'type' => $type
+		));
+		$command->setMultiValued($multivalued);
+		$command->setStored($stored);
+		$command->setIndexed($indexed);
+		$query->add('add_' . $name, $command);
 		$client->execute($query);
 	}
 
@@ -78,36 +113,11 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		 *
 		 * @var \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField $command
 		 */
-		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_COPY_FIELDFIELD);
+		$command = $query->createCommand(\StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query::COMMAND_ADD_COPY_FIELD, array());
 		$command->setSource($source);
 		$command->setDestination($destination);
 		$query->add('copy_' . $source . '_' . $destination, $command);
 		$client->execute($query);
-	}
-
-	/**
-	 *
-	 * @return \Solarium\Client
-	 */
-	protected function getClient() {
-		$config = array(
-			'endpoint' => array(
-				'localhost' => array(
-					'host'    => $this->configuration->ipAddress,
-					'port'    => $this->configuration->port,
-					'path'    => $this->configuration->path,
-					'timeout' => 10000
-				)
-			)
-		);
-		$client = new \Solarium\Client($config);
-		return $client;
-	}
-
-	protected function createIdFromDocument(\StingerSoft\EntitySearchBundle\Model\Document $document, $forSearch = false) {
-		$id = $document->getEntityClass() . '#' . json_encode($document->getEntityId());
-		$id = $forSearch ? str_replace('\\', '\\\\', $id) : $id;
-		return $id;
 	}
 
 	public function ping() {
@@ -143,7 +153,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Services\SearchService::saveDocument()
 	 */
-	public function saveDocument(\StingerSoft\EntitySearchBundle\Model\Document $document) {
+	public function saveDocument(\StingerSoft\EntitySearchBundle\Model\Document $document): void {
 		$client = $this->getClient();
 
 		$query = $client->createUpdate();
@@ -155,13 +165,13 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 			$filename = $document->getFile();
 			if(!file_exists($filename)) {
 				if($this->logger) {
-					$this->logger->error('Can\' find file ' . $filename);
+					$this->logger->error('Can\'t find file ' . $filename);
 				}
 				return;
 			}
 			$query = $client->createExtract();
 			$doc = $query->createDocument();
-
+			$query->setOptions(['literalsOverride' => false, 'lowernames' => false], false);
 			$query->setUprefix('attr_');
 			$query->setFile($filename);
 			$query->setCommit(true);
@@ -192,7 +202,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 			}
 		} catch(\Exception $exception) {
 			if($this->logger) {
-				$this->logger->critical('Failed to save Document!!', $exception);
+				$this->logger->critical('Failed to save Document!!', ['exception' => $exception]);
 			}
 		}
 	}
@@ -203,7 +213,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Services\SearchService::removeDocument()
 	 */
-	public function removeDocument(\StingerSoft\EntitySearchBundle\Model\Document $document) {
+	public function removeDocument(\StingerSoft\EntitySearchBundle\Model\Document $document): void {
 		$client = $this->getClient();
 
 		// get an update query instance
@@ -229,7 +239,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Services\SearchService::autocomplete()
 	 */
-	public function autocomplete($search, $maxResults = 10) {
+	public function autocomplete(string $search, int $maxResults = 10): array {
 		$client = $this->getClient();
 
 		// get a suggester query instance
@@ -240,14 +250,11 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		$query->setDictionary('PecSuggester');
 
 		$query->setHandler('suggest');
-		$query->setOnlyMorePopular(true);
 
 		$query->setCount($maxResults);
 		$query->addParam('suggest.count', $maxResults);
 
 		$query->addParam('suggest.build', 'true');
-
-		$query->setCollate(true);
 
 		// this executes the query and returns the result
 		$resultset = $client->suggester($query);
@@ -266,8 +273,70 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		return $result;
 	}
 
+	/**
+	 *
+	 * {@inheritdoc}
+	 *
+	 * @see \StingerSoft\EntitySearchBundle\Services\SearchService::search()
+	 */
+	public function search(Query $query): ResultSet {
+		$client = $this->getClient();
+
+		$filteredQuery = $this->getFilteredFacetedQuery($client, $query);
+		$facetQuery = $this->getFacetedQuery($client, $query);
+
+		$facetresultset = $client->select($facetQuery);
+
+		$result = new KnpResultSet($this->paginator, $client, $filteredQuery, $query->getSearchTerm());
+
+		$facetSet = new FacetSetAdapter();
+		foreach($facetresultset->getFacetSet() as $facetKey => $facetValues) {
+			$facetKey = $this->unescapeFacetKey($facetKey);
+			foreach($facetValues as $facetValue => $count) {
+				$facetSet->addFacetValue($facetKey, (string)$facetValue, $facetValue, (int)$count);
+			}
+		}
+		$result->setFacets($facetSet);
+
+		return $result;
+	}
+
+	public function getIndexSize(): int {
+		$client = $this->getClient();
+		$query = $client->createSelect();
+		$query->setRows(0);
+		$resultset = $client->execute($query);
+		return $resultset->getNumFound();
+	}
+
+	/**
+	 *
+	 * @return \Solarium\Client
+	 */
+	protected function getClient(): Client {
+		$config = array(
+			'endpoint' => array(
+				'localhost' => array(
+					'host'    => $this->configuration->ipAddress,
+					'port'    => $this->configuration->port,
+					'path'    => $this->configuration->path,
+					'timeout' => 10000
+				)
+			)
+		);
+		$client = new \Solarium\Client($config);
+		return $client;
+	}
+
+	protected function createIdFromDocument(\StingerSoft\EntitySearchBundle\Model\Document $document, $forSearch = false) {
+		$id = $document->getEntityClass() . '#' . json_encode($document->getEntityId());
+		$id = $forSearch ? str_replace('\\', '\\\\', $id) : $id;
+		return $id;
+	}
+
 	protected function getBasicQuery(Client $client, Query $query) {
 		$solrQuery = $client->createSelect();
+		$solrQuery->setQueryDefaultField('_text_');
 		$solrQuery->setQuery($query->getSearchTerm());
 
 		$hl = $solrQuery->getHighlighting();
@@ -287,7 +356,7 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 
 		// get the facetset component
 		$facetSet = $solrQuery->getFacetSet();
-		if($query->getUsedFacets() != null) {
+		if($query->getUsedFacets() !== null) {
 			foreach($query->getUsedFacets() as $facetKey) {
 				$facetKey = $this->escapeFacetKey($facetKey);
 				$facetField = $facetSet->createFacetField($facetKey);
@@ -310,45 +379,8 @@ class SearchService extends AbstractSearchService implements ContainerAwareInter
 		return $solrQuery;
 	}
 
-	/**
-	 *
-	 * {@inheritdoc}
-	 *
-	 * @see \StingerSoft\EntitySearchBundle\Services\SearchService::search()
-	 */
-	public function search(Query $query) {
-		$client = $this->getClient();
-
-		$filteredQuery = $this->getFilteredFacetedQuery($client, $query);
-		$facetQuery = $this->getFacetedQuery($client, $query);
-
-		$facetresultset = $client->select($facetQuery);
-
-		$result = new KnpResultSet($client, $filteredQuery, $query->getSearchTerm());
-		$result->setContainer($this->container);
-
-		$facetSet = new FacetSetAdapter();
-		foreach($facetresultset->getFacetSet() as $facetKey => $facetValues) {
-			$facetKey = $this->unescapeFacetKey($facetKey);
-			foreach($facetValues as $facetValue => $count) {
-				$facetSet->addFacetValue($facetKey, $facetValue, $count);
-			}
-		}
-		$result->setFacets($facetSet);
-
-		return $result;
-	}
-
-	public function getIndexSize() {
-		$client = $this->getClient();
-		$query = $client->createSelect();
-		$query->setRows(0);
-		$resultset = $client->execute($query);
-		return $resultset->getNumFound();
-	}
-
 	protected function escapeFacetValues($facetKey, array $facetValues) {
-		if($facetKey == Document::FIELD_TYPE) {
+		if($facetKey === Document::FIELD_TYPE) {
 			return array_map(function($value) {
 				return str_replace('\\', '\\\\', $value);
 			}, $facetValues);
