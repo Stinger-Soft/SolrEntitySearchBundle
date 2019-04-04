@@ -131,7 +131,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Tests\AbstractTestCase::getUsedEntityFixtures()
 	 */
-	protected function getUsedEntityFixtures() {
+	protected function getUsedEntityFixtures(): array {
 		return array(
 			Beer::class,
 			Car::class
