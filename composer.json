@@ -23,7 +23,7 @@
 	"license" : "Apache-2.0",
 	"require" : {
 		"php" : ">=7.2",
-		"stinger-soft/entity-search-bundle" : "~1.01",
+		"stinger-soft/entity-search-bundle" : "~1.1@dev",
 		"knplabs/knp-paginator-bundle" : "^5.0",
 		"stinger-soft/php-commons" : "~1.0",
 		"solarium/solarium" : "~4.1"
