@@ -20,10 +20,13 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  */
 class StingerSoftSolrEntitySearchBundle extends Bundle {
 
-	public static function getRequiredBundles($env) {
-		$bundles = array();
-		$bundles['StingerSoftSolrEntitySearchBundle'] = '\StingerSoft\SolrEntitySearchBundle\StingerSoftSolrEntitySearchBundle';
-		$bundles = array_merge($bundles, StingerSoftEntitySearchBundle::getRequiredBundles($env));
-		return $bundles;
+	public static function getRequiredBundles(string $env, array &$requiredBundles = []): array {
+
+		if(isset($requiredBundles['StingerSoftSolrEntitySearchBundle'])) {
+			return $requiredBundles;
+		}
+		$requiredBundles['StingerSoftSolrEntitySearchBundle'] = '\StingerSoft\SolrEntitySearchBundle\StingerSoftSolrEntitySearchBundle';
+		StingerSoftEntitySearchBundle::getRequiredBundles($env, $requiredBundles);
+		return $requiredBundles;
 	}
 }
