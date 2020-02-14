@@ -228,7 +228,7 @@ class SearchService extends AbstractSearchService {
 			$client->update($update);
 		} catch(\Exception $exception) {
 			if($this->logger) {
-				$this->logger->critical('Failed to remove Document!!', $exception);
+				$this->logger->critical('Failed to remove Document!!', ['exception' => $exception]);
 			}
 		}
 	}
