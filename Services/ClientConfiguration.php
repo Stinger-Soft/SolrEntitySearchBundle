@@ -23,10 +23,13 @@ class ClientConfiguration {
 	public  $port;
 	public string $path;
 
+	public string $core;
+
 	public function __construct(array $config) {
 		$this->ipAddress = $config['ipaddress'];
 		$this->port = $config['port'];
 		$this->path = $config['path'];
+		$this->core = $config['core'];
 	}
 
 }

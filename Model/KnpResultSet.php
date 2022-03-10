@@ -146,10 +146,11 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 		$result = array();
 
 		//Solr < 6.5
-		// $spellcheckResult = $this->lastSolrResult->getSpellcheck();
+//		$spellcheckResult = $this->lastSolrResult->getSpellcheck();
 
 		// Solr madness > 6.5
 		$rawData = $this->lastSolrResult->getResponse()->getBody();
+
 
 		$rawData = preg_replace_callback('/"collation":{"collationQuery"/i', function($match) {
 			return '"collation_' . \uniqid('', true) . '":{"collationQuery"';
@@ -172,7 +173,6 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 		usort($result, static function(Correction $a, Correction $b) {
 			return $b->getHits() - $a->getHits();
 		});
-
 		return $result;
 	}
 }

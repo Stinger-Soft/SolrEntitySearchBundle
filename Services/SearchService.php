@@ -329,6 +329,7 @@ class SearchService extends AbstractSearchService {
 					'host'    => $this->configuration->ipAddress,
 					'port'    => $this->configuration->port,
 					'path'    => $this->configuration->path,
+					'core'    => $this->configuration->core,
 					'timeout' => 10000
 				)
 			)
@@ -359,7 +360,6 @@ class SearchService extends AbstractSearchService {
 
 		$solrQuery->addParam('spellcheck', 'on');
 		$solrQuery->addParam('spellcheck.build', 'on');
-
 		return $solrQuery;
 	}
 

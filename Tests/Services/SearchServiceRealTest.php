@@ -148,9 +148,10 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 	protected function getSearchService(EntityManagerInterface $em = null): SearchService {
 		$dispatcher = $this->getMockBuilder('Symfony\Component\EventDispatcher\EventDispatcherInterface')->getMock();
 		$service = new SearchService(new Paginator($dispatcher), $dispatcher, array(
-			'path'      => '/solr/platform/',
+			'path'      => '/',
 			'port'      => '8983',
-			'ipaddress' => '127.0.0.1'
+			'ipaddress' => '127.0.0.1',
+			'core'      => 'gettingstarted'
 		));
 		$service->setObjectManager($em ?? $this->em);
 		if(!$service->ping()) {

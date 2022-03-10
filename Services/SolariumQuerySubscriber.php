@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace StingerSoft\SolrEntitySearchBundle\Services;
 
 use Knp\Component\Pager\Event\ItemsEvent;
+use Solarium\Client;
+use Solarium\QueryType\Select\Query\Query;
 use StingerSoft\SolrEntitySearchBundle\Model\Document;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -16,7 +18,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class SolariumQuerySubscriber implements EventSubscriberInterface {
 
-	public static function getSubscribedEvents() {
+	public static function getSubscribedEvents(): array {
 		return array(
 			'knp_pager.items' => array(
 				'items',
@@ -29,7 +31,7 @@ class SolariumQuerySubscriber implements EventSubscriberInterface {
 		if(\is_array($event->target) && 2 === count($event->target)) {
 			[$client, $query] = array_values($event->target);
 
-			if($client instanceof \Solarium\Client && $query instanceof \Solarium\QueryType\Select\Query\Query) {
+			if($client instanceof Client && $query instanceof Query) {
 				$query->setStart($event->getOffset())->setRows($event->getLimit());
 				$solrResult = $client->select($query);
 
