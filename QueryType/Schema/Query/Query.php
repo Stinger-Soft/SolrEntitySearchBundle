@@ -18,39 +18,42 @@ use Solarium\Core\Query\ResponseParserInterface;
 use Solarium\Exception\InvalidArgumentException;
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AbstractSchemaModification;
 use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\RequestBuilder;
+use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField;
+use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\ReplaceField;
+use StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField;
 
 class Query extends BaseQuery {
 
 	/**
 	 * Update command add field.
 	 */
-	const COMMAND_ADD_FIELD = 'add-field';
+	public const COMMAND_ADD_FIELD = 'add-field';
 
 	/**
 	 * Update command add copy field.
 	 */
-	const COMMAND_ADD_COPY_FIELD = 'add-copy-field';
+	public const COMMAND_ADD_COPY_FIELD = 'add-copy-field';
 
-	const COMMAND_REPLACE_FIELD = 'replace-field';
+	public const COMMAND_REPLACE_FIELD = 'replace-field';
 
 	/**
 	 * TODO add resultclass and document class
 	 * @var array
 	 */
-	protected $options = array(
+	protected $options = [
 		'handler'       => 'schema',
 		'resultclass'   => 'Solarium\QueryType\Update\Result',
 		'documentclass' => 'Solarium\QueryType\Update\Query\Document\Document',
 		'omitheader'    => false
-	);
+	];
 
-	protected $commandTypes = array(
-		self::COMMAND_ADD_FIELD      => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddField',
-		self::COMMAND_REPLACE_FIELD  => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\ReplaceField',
-		self::COMMAND_ADD_COPY_FIELD => 'StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command\AddCopyField',
-	);
+	protected array $commandTypes = [
+		self::COMMAND_ADD_FIELD      => AddField::class,
+		self::COMMAND_REPLACE_FIELD  => ReplaceField::class,
+		self::COMMAND_ADD_COPY_FIELD => AddCopyField::class,
+	];
 
-	protected $commands = array();
+	protected array $commands = array();
 
 	/**
 	 *
@@ -101,8 +104,8 @@ class Query extends BaseQuery {
 	 *
 	 * @return AbstractSchemaModification
 	 */
-	public function createCommand($type, $options = null): AbstractSchemaModification {
-		$type = strtolower($type);
+	public function createCommand(string $type, $options = null): AbstractSchemaModification {
+		$type = mb_strtolower($type);
 
 		if(!isset($this->commandTypes[$type])) {
 			throw new InvalidArgumentException("Update commandtype unknown: " . $type);

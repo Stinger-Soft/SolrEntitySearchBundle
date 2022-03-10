@@ -24,7 +24,7 @@ class AddFieldCommand extends Command {
 
 	protected static $defaultName = 'stinger:search-solr:add-field';
 
-	protected $searchService;
+	protected SearchService $searchService;
 
 	public function __construct(SearchService $searchService) {
 		parent::__construct();
@@ -38,7 +38,7 @@ class AddFieldCommand extends Command {
 	 *
 	 * @see \Symfony\Component\Console\Command\Command::configure()
 	 */
-	protected function configure() {
+	protected function configure(): void {
 		$this->setDescription('Adds a single field to the search index');
 		$this->addArgument('name', InputArgument::REQUIRED);
 		$this->addArgument('type', InputArgument::REQUIRED);
@@ -53,13 +53,13 @@ class AddFieldCommand extends Command {
 	 *
 	 * @see \Symfony\Component\Console\Command\Command::execute()
 	 */
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$name = $input->getArgument('name');
 		$type = $input->getArgument('type');
 		$multivalued = $input->getOption('multivalued');
 		$stored = $input->getOption('stored');
 		$indexed = $input->getOption('indexed');
 		$this->searchService->addField($name, $type, $multivalued, $stored, $indexed);
+		return Command::SUCCESS;
 	}
 }
-

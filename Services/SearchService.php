@@ -14,8 +14,10 @@ declare(strict_types=1);
 namespace StingerSoft\SolrEntitySearchBundle\Services;
 
 use Knp\Component\Pager\PaginatorInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Solarium\Client;
+use Solarium\Core\Client\Adapter\Curl;
 use Solarium\Exception\HttpException;
 use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
@@ -31,22 +33,29 @@ class SearchService extends AbstractSearchService {
 	 *
 	 * @var ClientConfiguration
 	 */
-	protected $configuration;
+	protected ClientConfiguration $configuration;
 
 	/**
 	 * @var LoggerInterface
 	 */
-	protected $logger;
+	protected ?LoggerInterface $logger = null;
 
 	/**
 	 * @var PaginatorInterface
 	 */
-	protected $paginator;
+	protected PaginatorInterface $paginator;
 
-	public function __construct(PaginatorInterface $paginator, array $config, LoggerInterface $logger = null) {
+	/**
+	 * @var EventDispatcherInterface
+	 */
+	protected EventDispatcherInterface $eventDispatcher;
+
+
+	public function __construct(PaginatorInterface $paginator, EventDispatcherInterface $eventDispatcher, array $config, LoggerInterface $logger = null) {
 		$this->configuration = new ClientConfiguration($config);
 		$this->logger = $logger;
 		$this->paginator = $paginator;
+		$this->eventDispatcher = $eventDispatcher;
 	}
 
 	public function initializeBackend() {
@@ -106,7 +115,7 @@ class SearchService extends AbstractSearchService {
 		$client->execute($query);
 	}
 
-	public function addCopyField($source, $destination) {
+	public function addCopyField($source, $destination): void {
 		$client = $this->getClient();
 		$query = new \StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Query();
 		/**
@@ -311,7 +320,7 @@ class SearchService extends AbstractSearchService {
 
 	/**
 	 *
-	 * @return \Solarium\Client
+	 * @return Client
 	 */
 	protected function getClient(): Client {
 		$config = array(
@@ -324,7 +333,10 @@ class SearchService extends AbstractSearchService {
 				)
 			)
 		);
-		$client = new \Solarium\Client($config);
+		// create a cURL adapter instance
+		$adapter = new Curl();
+
+		$client = new Client($adapter, $this->eventDispatcher, $config);
 		return $client;
 	}
 

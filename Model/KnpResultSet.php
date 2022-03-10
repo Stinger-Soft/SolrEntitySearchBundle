@@ -14,9 +14,12 @@ declare(strict_types=1);
 namespace StingerSoft\SolrEntitySearchBundle\Model;
 
 use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
+use Knp\Component\Pager\Pagination\PaginationInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Solarium\Client;
 use Solarium\Component\Result\Highlighting\Highlighting;
+use Solarium\QueryType\Select\Query\Query;
+use Solarium\QueryType\Select\Result\Result;
 use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\PaginatableResultSet;
 use StingerSoft\EntitySearchBundle\Model\Result\Correction;
@@ -26,21 +29,21 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 
 	/**
 	 *
-	 * @var \Solarium\QueryType\Select\Query\Query
+	 * @var Query
 	 */
-	protected $query = null;
+	protected Query $query;
 
 	/**
 	 *
 	 * @var string
 	 */
-	protected $term = null;
+	protected string $term;
 
 	/**
 	 *
-	 * @var \Solarium\Client
+	 * @var Client
 	 */
-	protected $client = null;
+	protected Client $client;
 
 	/**
 	 *
@@ -50,23 +53,23 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 
 	/**
 	 *
-	 * @var \Solarium\QueryType\Select\Result\Result
+	 * @var Result|null
 	 */
-	protected $lastSolrResult = null;
+	protected ?Result $lastSolrResult = null;
 
 	/**
 	 * @var PaginatorInterface
 	 */
-	protected $paginator;
+	protected PaginatorInterface $paginator;
 
 	/**
 	 * KnpResultSet constructor.
 	 * @param PaginatorInterface $paginator
 	 * @param Client $client
-	 * @param \Solarium\QueryType\Select\Query\Query $query
+	 * @param Query $query
 	 * @param string $term
 	 */
-	public function __construct(PaginatorInterface $paginator, Client $client, \Solarium\QueryType\Select\Query\Query $query, string $term) {
+	public function __construct(PaginatorInterface $paginator, Client $client, Query $query, string $term) {
 		$this->query = $query;
 		$this->term = $term;
 		$this->client = $client;
@@ -79,7 +82,7 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Model\PaginatableResultSet::paginate()
 	 */
-	public function paginate(int $page = 1, int $limit = 10, array $options = array()): \Knp\Component\Pager\Pagination\PaginationInterface {
+	public function paginate(int $page = 1, int $limit = 10, array $options = array()): PaginationInterface {
 		$this->lastResult = $this->paginator->paginate(array(
 			$this->client,
 			$this->query
@@ -166,7 +169,7 @@ class KnpResultSet extends ResultSetAdapter implements PaginatableResultSet {
 			}
 		}
 
-		usort($result, function(Correction $a, Correction $b) {
+		usort($result, static function(Correction $a, Correction $b) {
 			return $b->getHits() - $a->getHits();
 		});
 

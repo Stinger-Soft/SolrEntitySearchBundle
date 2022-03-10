@@ -28,35 +28,35 @@ class AddField extends AbstractSchemaModification {
 		);
 	}
 
-	public function setType($type) {
+	public function setType(string $type) {
 		$this->setOption('type', $type);
 	}
 
-	public function getType() {
+	public function getType(): string {
 		return $this->getOption('type');
 	}
 
-	public function setIndexed($type) {
+	public function setIndexed(bool $type): void {
 		$this->setOption('indexed', $type);
 	}
 
-	public function isIndexed() {
+	public function isIndexed(): bool {
 		return $this->getOption('indexed');
 	}
 
-	public function setStored($type) {
+	public function setStored(bool $type): void {
 		$this->setOption('stored', $type);
 	}
 
-	public function isStored() {
+	public function isStored(): bool {
 		return $this->getOption('stored');
 	}
 
-	public function setMultiValued($type) {
+	public function setMultiValued(bool $type): void {
 		$this->setOption('stored', $type);
 	}
 
-	public function isMultiValued() {
+	public function isMultiValued(): bool {
 		return $this->getOption('stored');
 	}
 }

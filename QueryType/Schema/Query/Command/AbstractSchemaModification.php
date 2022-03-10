@@ -15,37 +15,37 @@ namespace StingerSoft\SolrEntitySearchBundle\QueryType\Schema\Query\Command;
 
 abstract class AbstractSchemaModification {
 
-	protected $options = array();
+	protected array $options;
 
 	public function __construct(array $options = array()) {
 		$this->options = $options;
 	}
 
-	public abstract function getCommandType();
+	abstract public function getCommandType(): string;
 
-	public function getRequiredFields() {
+	public function getRequiredFields(): array {
 		return array(
 			'name'
 		);
 	}
 
-	public function getOptions() {
+	public function getOptions(): array {
 		return $this->options;
 	}
 
-	public function setOption($key, $value) {
+	public function setOption(string $key, $value): void {
 		$this->options[$key] = $value;
 	}
 
-	public function getOption($key) {
+	public function getOption(string $key) {
 		return $this->options[$key] ?? null;
 	}
 
-	public function setName($name) {
+	public function setName(string $name): void {
 		$this->setOption('name', $name);
 	}
 
-	public function getName() {
+	public function getName(): string {
 		return $this->getOption('name');
 	}
 }

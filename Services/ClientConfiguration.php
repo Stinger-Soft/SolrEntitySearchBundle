@@ -15,9 +15,13 @@ namespace StingerSoft\SolrEntitySearchBundle\Services;
 
 class ClientConfiguration {
 
-	public $ipAddress;
-	public $port;
-	public $path;
+	public string $ipAddress;
+
+	/**
+	 * @var string|int
+	 */
+	public  $port;
+	public string $path;
 
 	public function __construct(array $config) {
 		$this->ipAddress = $config['ipaddress'];

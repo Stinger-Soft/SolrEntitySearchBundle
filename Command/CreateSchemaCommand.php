@@ -22,7 +22,7 @@ class CreateSchemaCommand extends Command {
 
 	protected static $defaultName = 'stinger:search-solr:init';
 
-	protected $searchService;
+	protected SearchService $searchService;
 
 	public function __construct(SearchService $searchService) {
 		parent::__construct();
@@ -36,7 +36,7 @@ class CreateSchemaCommand extends Command {
 	 *
 	 * @see \Symfony\Component\Console\Command\Command::configure()
 	 */
-	protected function configure() {
+	protected function configure(): void {
 		$this->setDescription('Clears the configured search index');
 	}
 
@@ -46,8 +46,9 @@ class CreateSchemaCommand extends Command {
 	 *
 	 * @see \Symfony\Component\Console\Command\Command::execute()
 	 */
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$this->searchService->initializeBackend();
+		return Command::SUCCESS;
 	}
 }
 

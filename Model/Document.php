@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace StingerSoft\SolrEntitySearchBundle\Model;
 
-use Solarium\QueryType\Select\Result\DocumentInterface;
+use Solarium\Core\Query\DocumentInterface;
 use StingerSoft\EntitySearchBundle\Model\DocumentAdapter;
 
 class Document extends DocumentAdapter {
@@ -35,7 +35,7 @@ class Document extends DocumentAdapter {
 		return $document;
 	}
 
-	protected static function getSingleValueFieldFromSolariumResult(Document $document, $fieldName) {
+	protected static function getSingleValueFieldFromSolariumResult(Document $document, string $fieldName) {
 		$value = $document->getFieldValue($fieldName);
 		if(\is_array($value)) {
 			return current($value);
@@ -49,7 +49,7 @@ class Document extends DocumentAdapter {
 	 *
 	 * @see \StingerSoft\EntitySearchBundle\Model\Document::getFieldValue()
 	 */
-	public function getFieldValue($fieldName) {
+	public function getFieldValue(string $fieldName) {
 		$fallBackFieldname = \strtolower($fieldName);
 		if(!isset($this->fields[$fieldName]) && isset($this->fields[$fallBackFieldname])) {
 			$fieldName = $fallBackFieldname;

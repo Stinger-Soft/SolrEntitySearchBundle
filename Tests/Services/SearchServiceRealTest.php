@@ -5,7 +5,9 @@ namespace Tests\Services;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\Paginator;
+use StingerSoft\EntitySearchBundle\Model\Document;
 use StingerSoft\EntitySearchBundle\Model\Query;
+use StingerSoft\EntitySearchBundle\Model\Result\FacetSetAdapter;
 use StingerSoft\EntitySearchBundle\Tests\AbstractORMTestCase;
 use StingerSoft\EntitySearchBundle\Tests\Fixtures\ORM\Beer;
 use StingerSoft\EntitySearchBundle\Tests\Fixtures\ORM\Car;
@@ -21,7 +23,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 	 *
 	 * @see PHPUnit_Framework_TestCase::setUp()
 	 */
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 		$this->getMockSqliteEntityManager();
 		$this->indexCount = 0;
@@ -29,19 +31,19 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertEquals(0, $this->getSearchService($this->em)->getIndexSize());
 	}
 
-	public function testAddField() {
+	public function testAddField(): void {
 		$service = $this->getSearchService();
 		$service->addField('test', 'string');
 	}
 
-	public function testSaveDocument() {
+	public function testSaveDocument(): void {
 		$service = $this->getSearchService();
 		$this->indexBeer($service);
 		$service->clearIndex();
 		$this->assertEquals(0, $service->getIndexSize());
 	}
 
-	public function testSaveDocumentComposite() {
+	public function testSaveDocumentComposite(): void {
 		$car = new Car('S500', 2016);
 		$this->em->persist($car);
 		$this->em->flush();
@@ -58,7 +60,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertEquals(0, $service->getIndexSize());
 	}
 
-	public function testRemoveDocument() {
+	public function testRemoveDocument(): void {
 		$service = $this->getSearchService();
 		$result = $this->indexBeer($service);
 
@@ -67,7 +69,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertEquals(0, $service->getIndexSize());
 	}
 
-	public function testAutocompletion() {
+	public function testAutocompletion(): void {
 		$service = $this->getSearchService();
 		$result = $this->indexBeer($service);
 
@@ -76,7 +78,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->assertContains($result[0]->getTitle(), $suggests);
 	}
 
-	public function testSearch() {
+	public function testSearch(): void {
 		$service = $this->getSearchService();
 		$this->indexBeer($service);
 		$this->indexBeer($service, 'Haake Beck');
@@ -84,8 +86,8 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->indexBeer($service, 'Haake Beck Kräusen');
 
 		$query = new Query('Beck', array(), array(
-			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TITLE,
-			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE
+			Document::FIELD_TITLE,
+			Document::FIELD_TYPE
 		));
 
 		$result = $service->search($query);
@@ -96,18 +98,18 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		 * @var FacetSetAdapter $facets
 		 */
 		$facets = $result->getFacets();
-		$titleFacets = $facets->getFacet(\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TITLE);
+		$titleFacets = $facets->getFacet(Document::FIELD_TITLE);
 		$this->assertCount(3, $titleFacets);
 		$this->assertArrayHasKey('Haake Beck', $titleFacets);
 		$this->assertArrayHasKey('Haake Beck Kräusen', $titleFacets);
 		$this->assertEquals($titleFacets['Haake Beck']['count'], 2);
 		$this->assertEquals($titleFacets['Haake Beck Kräusen']['count'], 1);
-		$typeFacets = $facets->getFacet(\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE);
+		$typeFacets = $facets->getFacet(Document::FIELD_TYPE);
 		$this->assertCount(1, $typeFacets);
 
 	}
 
-	public function testSearchCorrection() {
+	public function testSearchCorrection(): void {
 		$service = $this->getSearchService();
 		$this->indexBeer($service);
 		$this->indexBeer($service, 'Haake Beck');
@@ -115,8 +117,8 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		$this->indexBeer($service, 'Haake Beck Kräusen');
 
 		$query = new Query('Hake Bcek', array(), array(
-			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TITLE,
-			\StingerSoft\EntitySearchBundle\Model\Document::FIELD_TYPE
+			Document::FIELD_TITLE,
+			Document::FIELD_TYPE
 		));
 
 		$result = $service->search($query);
@@ -140,10 +142,12 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 
 	/**
 	 *
-	 * @return \StingerSoft\SolrEntitySearchBundle\Services\SearchService
+	 * @param EntityManagerInterface|null $em
+	 * @return SearchService
 	 */
-	protected function getSearchService(EntityManagerInterface $em = null) {
-		$service = new SearchService(new Paginator(), array(
+	protected function getSearchService(EntityManagerInterface $em = null): SearchService {
+		$dispatcher = $this->getMockBuilder('Symfony\Component\EventDispatcher\EventDispatcherInterface')->getMock();
+		$service = new SearchService(new Paginator($dispatcher), $dispatcher, array(
 			'path'      => '/solr/platform/',
 			'port'      => '8983',
 			'ipaddress' => '127.0.0.1'
@@ -155,7 +159,7 @@ class SearchServiceRealTest extends AbstractORMTestCase {
 		return $service;
 	}
 
-	protected function indexBeer(SearchService $service, $title = 'Hemelinger') {
+	protected function indexBeer(SearchService $service, string $title = 'Hemelinger'): array {
 		$beer = new Beer();
 		$beer->setTitle($title);
 		$this->em->persist($beer);

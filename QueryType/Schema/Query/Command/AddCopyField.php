@@ -28,19 +28,19 @@ class AddCopyField extends AbstractSchemaModification {
 		);
 	}
 
-	public function setSource($value) {
+	public function setSource(string $value): void {
 		$this->setOption('source', $value);
 	}
 
-	public function getSource() {
+	public function getSource(): string {
 		return $this->getOption('source');
 	}
 
-	public function setDestination($value) {
+	public function setDestination(string $value): void {
 		$this->setOption('dest', $value);
 	}
 
-	public function getDestination() {
+	public function getDestination(): string {
 		return $this->getOption('dest');
 	}
 
